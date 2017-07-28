@@ -101,14 +101,15 @@ ENV/
 .mypy_cache/
 
 #Extra
-.hdr
-.fit
-.fits
-.dat
-.tbl
-.o
-.png
-.imglist
-.ipynb
-.pyc
-.pyo
+*.hdr
+*.fit
+*.fits
+*.dat
+*.tbl
+*.o
+*.o*
+*.png
+*.imglist
+*.ipynb
+*.pyc
+*.pyo
