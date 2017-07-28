@@ -1,0 +1,9 @@
+#!/bin/bash
+#stamps.sh
+if [ -d "output_stamps" ]; then 
+	rm -r "output_stamps"
+fi
+mkdir "output_stamps"
+cd "output_stamps"
+cat $1 | parallel --colsep ',' /data/cnmoya/script/atlas_cut {1} {2} {3} {4} 
+#parallel -j -4  -N 4 echo '{1}' '{2}' < $1

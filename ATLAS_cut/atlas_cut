@@ -1,0 +1,42 @@
+#!/bin/bash
+#coverage.sh
+id=$1
+ra=$2
+dec=$3
+radius=$4
+map_file='/home/cnmoya/Desktop/tbls/maps/map_file.tbl'
+
+
+if [ -d "${id}" ]; then 
+	rm -r "${id}"
+fi
+
+mkdir "${id}"
+
+cd "${id}"
+
+mkdir "u"
+mkdir "g"
+mkdir "r"
+mkdir "i"
+mkdir "z"
+cat $map_file | parallel mCoverageCheck {}  {/.}.imglist  -point $ra $dec
+
+if [ $(cat *.imglist | wc -l) -gt 15 ]; then
+	awk ' {print $NF}' *.imglist| grep _st | parallel 'str=${}; /data/cnmoya/script/imcopy.o /data/atlas_exposed/nightlies/${str:34:8}/${str:33:18}.fit[${str:30:2}] ${str:28:1}/{/.}.fit'
+	awk ' {print $NF}' *.imglist| grep _st | parallel 'str=${}; /data/cnmoya/script/imcopy.o /data/atlas_exposed/nightlies/${str:34:8}/${str:33:18}_conf.fit[${str:30:2}] ${str:28:1}/{/.}.w'
+	python /data/cnmoya/script/join_fit.pyo $id $ra $dec $radius
+	#rm -r "u"
+	#rm -r "g"
+	#rm -r "r"
+	#rm -r "i"
+	#rm -r "z"
+	rm *.imglist
+	cd ..
+else
+	echo "No image found on server for ${id}"
+	cd ..
+	rm -r "${id}"
+fi
+
+#end of the script
