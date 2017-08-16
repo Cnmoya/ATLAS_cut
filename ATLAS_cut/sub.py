@@ -4,6 +4,11 @@ from aplpy import make_rgb_image
 import os
 from functools import reduce
 from multiprocessing import Pool
+from math import ceil
+
+
+
+
 def read_montage_table():	
 
 
@@ -20,25 +25,45 @@ def read_montage_table():
 
     return files_dict
 
-def make_rgb():
+def make_rgb(files_dict):
+
     """
     Using aplpy, make a RGB PNG image.
     """
     pass
 
 
-def call_swarp(file_dict):
+def call_swarp(file_dict,ra,dec,size,sizepix = 0.213):
     """
     Calls swarp, iterating over the list of dicts.
     """
-    os.system("swarp -c default.swarp")
-    pass
+    pix = ceil(size/0.213)
+    def swarp(_tuple):
+        if _tuple[1]!=[]:
+            os.system("swarp {} -c default.swarp -IMAGEOUT_NAME {}.fits -WEIGHOUT_NAME {}.w -CENTER{},{} -IMAGE_SIZE {}".format(" ".join(_tuple[1]),_tuple[0],_tuple[0],ra,dec,pix))
+        else:
+            os.system('mHdr "{} {}" {} out.hdr'.format(ra,dec,size))
+            data = np.zeros((pix,pix))
+	    header = fits.Header.fromtextfile('out.hdr')
+	    header["DATAOK"] = (0,"No image found on server")
+            fits.writeto("{}.fit".format(_tuple[0]),data=data,header=header)
 
-def make_image_cube():
+    p = Pool(5)
+    p.map(swarp,[_tuplex for _tuplex in file_dict.items()])
+
+def make_image_cube(_id):
     """
     Stack the image for each band,creating a data cube with NAXIS3 = 5 
     """
-    pass
+    ugriz_out = fits.HDUList()
+    for i in 'ugriz':
+        head = fits.getheader('{}.fit'.format(i))
+        if not "DATAOK" in header.keys():
+            head["DATAOK"] = 1
+	head["FILT"] = i
+	ugriz_out.append(fits.ImageHDU(fits.getdata('{}.fit'.format(i)),head))
+    ugriz_out.writeto('{}.fits'.format(_id))
+
 
 def make_weight_cube():
     """
@@ -51,11 +76,12 @@ def get_header_keys(files_dict,keys):
     Save important keywords from pre-swarp input files headers.
     """
     for i in files_dict.keys():
-        cont = 0
+        cont = 1
         with open('%s.hdr'%i,'w') as out_hdr:
             for _file in files_dict[i]:
-                output = sp.check_output(" egrep '{}' {}".format('|'.join(keys),_file),shell=True).decode('UTF-8')
-                reduce(lambda s, kv: s.replace(kv,kv+'00{}').format(cont), keys, output)
+                output = sp.check_output("dfits {} | egrep '{}' ".format(_file,'|'.join(keys)),shell=True).decode('UTF-8')
+                output = reduce(lambda s, kv: s.replace(kv,kv+'00{}'.format(cont),),keys,output)
+                out_hdr.write(output)
                 cont+=1
 
         out_hdr.close()
