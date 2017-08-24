@@ -5,13 +5,21 @@ import os
 from functools import reduce
 from multiprocessing import Pool
 from math import ceil
+import threading as th
 
 
 
 
-
-
-
+class filt_thread(th.Thread):
+    def __init__(self,name,files,ra,dec):
+        th.Thread.__init__(self)
+        self._name = name
+        self._files = files
+        self._ra = ra
+        self._dec = dec
+        
+    def run(self):
+        pass
 
 def imcopy(files_dict):
     """
